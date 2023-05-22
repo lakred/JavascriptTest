@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gestione Utenti</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+        .highlight {
+            background-color: yellow;
+        }
+        #utenteTrovato {
+            display: none;
+        }
+        h1 {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Gestione Utenti</h1>
+        <br><br>
+        <div class="row">
+            <div class="col-md-6">
+                <h2>Aggiungi utente</h2>
+                <form id="formAggiungi">
+                    <div class="form-group">
+                        <label for="nome">Nome</label>
+                        <input type="text" class="form-control" id="nome" placeholder="Nome" maxlength="250">
+                    </div>
+                    <div class="form-group">
+                        <label for="cognome">Cognome</label>
+                        <input type="text" class="form-control" id="cognome" placeholder="Cognome" maxlength="250">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" class="form-control" id="email" placeholder="Email">
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="aggiungiUtente()">Aggiungi</button>
+                </form>
+                <p id="aggiungiError" class="error"></p>
+                <p id="aggiungiSuccess" class="success"></p>
+            </div>
+
+            <div class="col-md-6">
+                <h2>Elimina utente</h2>
+                <form id="formElimina">
+                    <div class="form-group">
+                        <label for="emailElimina">Email</label>
+                        <input type="email" class="form-control" id="emailElimina" placeholder="Email">
+                    </div>
+                    <button type="button" class="btn btn-danger" onclick="confermaEliminazione()">Elimina</button>
+                </form>
+                <p id="eliminaError" class="error"></p>
+                <p id="eliminaSuccess" class="success"></p>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <h2>Modifica utente</h2>
+                <form id="formModifica">
+                    <div class="form-group">
+                        <label for="emailModifica">Email corrente</label>
+                        <input type="email" class="form-control" id="emailModifica" placeholder="Email corrente">
+                    </div>
+                    <div class="form-group">
+                        <label for="nuovoNome">Nuovo nome</label>
+                        <input type="text" class="form-control" id="nuovoNome" placeholder="Nuovo nome" maxlength="250">
+                    </div>
+                    <div class="form-group">
+                        <label for="nuovoCognome">Nuovo cognome</label>
+                        <input type="text" class="form-control" id="nuovoCognome" placeholder="Nuovo cognome" maxlength="250">
+                    </div>
+                    <div class="form-group">
+                        <label for="nuovaEmail">Nuova email</label>
+                        <input type="email" class="form-control" id="nuovaEmail" placeholder="Nuova email">
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="modificaUtente()">Modifica</button>
+                </form>
+                <p id="modificaError" class="error"></p>
+                <p id="modificaSuccess" class="success"></p>
+            </div>
+
+            <div class="col-md-6">
+                <h2>Cerca utente</h2>
+                <form id="formCerca">
+                    <div class="form-group">
+                        <label for="emailCerca">Email</label>
+                        <input type="email" class="form-control" id="emailCerca" placeholder="Email">
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="cercaUtente()">Cerca</button>
+                </form>
+                <p id="cercaError" class="error"></p>
+            </div>
+        </div>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Nome</th>
+                    <th scope="col">Cognome</th>
+                    <th scope="col">Email</th>
+                </tr>
+            </thead>
+            <tbody id="utentiTableBody">
+            </tbody>
+        </table>
+
+        <div id="utenteTrovato">
+            <h3>Utente Trovato</h3>
+            <p id="utenteNome"></p>
+            <p id="utenteCognome"></p>
+            <p id="utenteEmail"></p>
+        </div>
+    </div>
+
+    <script>
+        var utenti = [];
+
+        function isValidName(name) {
+            return /^[a-zA-Z]+$/.test(name);
+        }
+
+        function mostraErrore(elementId, message) {
+            var errorElement = document.getElementById(elementId);
+            errorElement.innerText = message;
+            errorElement.style.display = 'block';
+        }
+
+        function nascondiMessaggio(elementId) {
+            var element = document.getElementById(elementId);
+            element.innerText = '';
+            element.style.display = 'none';
+        }
+
+        function confermaEliminazione() {
+            var email = document.getElementById('emailElimina').value;
+            var utente = utenti.find(utente => utente.email === email);
+            
+            if (utente) {
+                var conferma = confirm("Sei sicuro di voler eliminare l'utente?");
+                if (conferma) {
+                    eliminaUtente();
+                }
+            } else {
+                mostraErrore('eliminaError', 'Utente non trovato.');
+                nascondiMessaggio('eliminaSuccess');
+            }
+        }
+
+        function aggiungiUtente() {
+            var nome = document.getElementById('nome').value;
+            var cognome = document.getElementById('cognome').value;
+            var email = document.getElementById('email').value;
+
+            if (!isValidName(nome)) {
+                mostraErrore('aggiungiError', 'Il nome non è valido.');
+                nascondiMessaggio('aggiungiSuccess');
+                return;
+            }
+
+            if (!isValidName(cognome)) {
+                mostraErrore('aggiungiError', 'Il cognome non è valido.');
+                nascondiMessaggio('aggiungiSuccess');
+                return;
+            }
+
+            if (!email.includes('@')) {
+                mostraErrore('aggiungiError', 'L\'email non è valida.');
+                nascondiMessaggio('aggiungiSuccess');
+                return;
+            }
+
+            if (utenti.find(utente => utente.email === email)) {
+                mostraErrore('aggiungiError', 'L\'email è già esistente.');
+                nascondiMessaggio('aggiungiSuccess');
+                return;
+            }
+
+            utenti.push({
+                nome,
+                cognome,
+                email
+            });
+
+            mostraErrore('aggiungiError', '');
+            mostraErrore('aggiungiSuccess', 'Utente aggiunto con successo.');
+
+            updateTable();
+        }
+
+        function eliminaUtente() {
+            var email = document.getElementById('emailElimina').value;
+            var index = utenti.findIndex(utente => utente.email === email);
+
+            if (index !== -1) {
+                utenti.splice(index, 1);
+                mostraErrore('eliminaError', '');
+                mostraErrore('eliminaSuccess', 'Utente eliminato con successo.');
+            } else {
+                mostraErrore('eliminaError', 'Utente non trovato.');
+                nascondiMessaggio('eliminaSuccess');
+            }
+
+            updateTable();
+        }
+
+        function modificaUtente() {
+            var email = document.getElementById('emailModifica').value;
+            var newNome = document.getElementById('nuovoNome').value;
+            var newCognome = document.getElementById('nuovoCognome').value;
+            var nuovaEmail = document.getElementById('nuovaEmail').value;
+
+            var utente = utenti.find(utente => utente.email === email);
+
+            if (utente) {
+                if (newNome && !isValidName(newNome)) {
+                    mostraErrore('modificaError', 'Il nuovo nome non è valido.');
+                    nascondiMessaggio('modificaSuccess');
+                    return;
+                }
+
+                if (newCognome && !isValidName(newCognome)) {
+                    mostraErrore('modificaError', 'Il nuovo cognome non è valido.');
+                    nascondiMessaggio('modificaSuccess');
+                    return;
+                }
+
+                if (nuovaEmail && !nuovaEmail.includes('@')) {
+                    mostraErrore('modificaError', 'La nuova email non è valida.');
+                    nascondiMessaggio('modificaSuccess');
+                    return;
+                }
+
+                if (nuovaEmail && utenti.find(utente => utente.email === nuovaEmail)) {
+                    mostraErrore('modificaError', 'La nuova email è già esistente.');
+                    nascondiMessaggio('modificaSuccess');
+                    return;
+                }
+
+                if (newNome) utente.nome = newNome;
+                if (newCognome) utente.cognome = newCognome;
+                if (nuovaEmail) utente.email = nuovaEmail;
+
+                mostraErrore('modificaError', '');
+                mostraErrore('modificaSuccess', 'Utente modificato con successo.');
+            } else {
+                mostraErrore('modificaError', 'Utente non trovato.');
+                nascondiMessaggio('modificaSuccess');
+            }
+
+            updateTable();
+        }
+
+        function cercaUtente() {
+        var email = document.getElementById('emailCerca').value;
+        var utente = utenti.find(utente => utente.email === email);
+
+        if (utente) {
+            mostraErrore('cercaError', '');
+
+            var rows = document.querySelectorAll('#utentiTableBody tr');
+            rows.forEach(row => {
+                row.classList.remove('highlight');
+            });
+
+            var utenteRow = document.getElementById('utenteRow_' + utente.email);
+            utenteRow.classList.add('highlight');
+
+            document.getElementById('utenteNome').innerText = 'Nome: ' + utente.nome;
+            document.getElementById('utenteCognome').innerText = 'Cognome: ' + utente.cognome;
+            document.getElementById('utenteEmail').innerText = 'Email: ' + utente.email;
+
+            document.getElementById('utenteTrovato').style.display = 'block';
+        } else {
+            mostraErrore('cercaError', 'Utente non trovato.');
+
+            var rows = document.querySelectorAll('#utentiTableBody tr');
+            rows.forEach(row => {
+                row.classList.remove('highlight');
+            });
+
+            document.getElementById('utenteNome').innerText = '';
+            document.getElementById('utenteCognome').innerText = '';
+            document.getElementById('utenteEmail').innerText = '';
+
+            document.getElementById('utenteTrovato').style.display = 'none';
+        }
+    }
+
+        function updateTable() {
+            var tableBody = document.getElementById('utentiTableBody');
+            tableBody.innerHTML = '';
+
+            for (var i = 0; i < utenti.length; i++) {
+                var utente = utenti[i];
+
+                var row = document.createElement('tr');
+                row.id = 'utenteRow_' + utente.email;
+                var indexCell = document.createElement('td');
+                indexCell.innerText = i + 1;
+                var nomeCell = document.createElement('td');
+                nomeCell.innerText = utente.nome;
+                var cognomeCell = document.createElement('td');
+                cognomeCell.innerText = utente.cognome;
+                var emailCell = document.createElement('td');
+                emailCell.innerText = utente.email;
+
+                row.appendChild(indexCell);
+                row.appendChild(nomeCell);
+                row.appendChild(cognomeCell);
+                row.appendChild(emailCell);
+
+                tableBody.appendChild(row);
+            }
+        }
+    </script>
+</body>
+</html>
